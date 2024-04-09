@@ -4,8 +4,35 @@ from joblib import load
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import uuid
+import pickle
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+from tensorflow import keras
+from PIL import Image
 
 app = Flask(__name__)
+
+
+def process_image_from_bytes(image_bytes):
+    try:
+        # Open the image from bytes
+        image = Image.open(BytesIO(image_bytes))
+
+        # Process the image as needed
+
+        # Example: Convert image to RGB (in case it's grayscale)
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+
+        # Example: Resize image to the required input size of your model
+        # image = image.resize((width, height))
+
+        return image
+    except Exception as e:
+        print("Error processing image:", e)
+        return None
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -18,11 +45,29 @@ def hello_world():
     if request.method == "GET":
         return render_template("index.html", pic="static/base_pic.svg")
     else:
-        text = request.form["text"]
-        path = "static/ResultsImage.svg"
-        model = load("model.joblib")
-        make_picture("AgesAndHeights.pkl", model, floats_string_to_np_array(text), path)
-        return render_template("index.html", pic=path)
+        uploaded_file = request.files["flowerfile"]
+        print(uploaded_file)
+        print(vars(uploaded_file))
+        if uploaded_file.filename != "":
+            guess, score = make_flower_guess(uploaded_file)
+        return render_template(
+            "index.html", pic=uploaded_file, guess=guess, score=score
+        )
+
+
+def make_flower_guess(image):
+    model = load_model("flowers_model.h5")
+    model.summary()
+    image = keras.utils.load_img(image)
+    input_arr = keras.utils.img_to_array(image)
+    input_arr = np.array([input_arr])  # Convert single image to a batch.
+
+    # make a prediction with the image
+    predictions = model.predict(input_arr)
+    score = tf.nn.softmax(predictions[0])
+
+    # return guess and score
+    return class_names[np.argmax(score)], 100 * np.max(score)
 
 
 def make_picture(training_data_filename, model, new_inp_np_arr, output_file):
