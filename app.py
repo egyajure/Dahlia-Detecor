@@ -46,19 +46,16 @@ def hello_world():
         return render_template("index.html", pic="static/base_pic.svg")
     else:
         uploaded_file = request.files["flowerfile"]
-        print(uploaded_file)
-        print(vars(uploaded_file))
+        image = Image.open(uploaded_file)
         if uploaded_file.filename != "":
-            guess, score = make_flower_guess(uploaded_file)
-        return render_template(
-            "index.html", pic=uploaded_file, guess=guess, score=score
-        )
+            guess, score = make_flower_guess(image)
+        return render_template("index.html", pic=image, guess=guess, score=score)
 
 
 def make_flower_guess(image):
     model = load_model("flowers_model.h5")
     model.summary()
-    image = keras.utils.load_img(image)
+    image = image.resize((180, 180))
     input_arr = keras.utils.img_to_array(image)
     input_arr = np.array([input_arr])  # Convert single image to a batch.
 
@@ -67,37 +64,8 @@ def make_flower_guess(image):
     score = tf.nn.softmax(predictions[0])
 
     # return guess and score
+    class_names = ["daisy", "dandelion", "roses", "sunflowers", "tulips"]
     return class_names[np.argmax(score)], 100 * np.max(score)
-
-
-def make_picture(training_data_filename, model, new_inp_np_arr, output_file):
-    data = pd.read_pickle(training_data_filename)
-    ages = data["Age"]
-    data = data[ages > 0]
-    ages = data["Age"]
-    heights = data["Height"]
-    x_new = np.array(list(range(19))).reshape(19, 1)
-    preds = model.predict(x_new)
-    fig = px.scatter(
-        x=ages,
-        y=heights,
-        title="Height vs Age of People",
-        labels={"x": "Age (years)", "y": "Height (inches)"},
-    )
-    fig.add_trace(go.Scatter(x=x_new.reshape(19), y=preds, mode="lines", name="Model"))
-
-    new_preds = model.predict(new_inp_np_arr)
-    fig.add_trace(
-        go.Scatter(
-            x=new_inp_np_arr.reshape(len(new_inp_np_arr)),
-            y=new_preds,
-            mode="markers",
-            name="New Outputs",
-            marker=dict(color="purple", size=20, line=dict(color="purple", width=2)),
-        )
-    )
-
-    fig.write_image(output_file, width=800, engine="kaleido")
 
 
 def floats_string_to_np_array(floats_str):
