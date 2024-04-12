@@ -42,7 +42,7 @@ def home():
 
 
 def make_flower_guess(image):
-    model = load_model("flowers_model.h5")
+    model = load_model("dahlias_model.h5")
     model.summary()
     image = image.resize((180, 180))
     input_arr = keras.utils.img_to_array(image)
@@ -53,7 +53,15 @@ def make_flower_guess(image):
     score = tf.nn.softmax(predictions[0])
 
     # return guess and score
-    class_names = ["daisy", "dandelion", "roses", "sunflowers", "tulips"]
+    class_names = [
+        "Cactus",
+        "Decorative",
+        "Waterlily",
+        "Pompon Ball",
+        "Peony",
+        "Collarette",
+        "Dinnerplate",
+    ]
     return class_names[np.argmax(score)], 100 * np.max(score)
 
 
