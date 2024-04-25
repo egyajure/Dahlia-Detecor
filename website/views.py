@@ -1,4 +1,4 @@
-from flask import Blueprint, Flask, render_template, request, flash
+from flask import Blueprint, Flask, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 import numpy as np
 import pandas as pd
@@ -8,9 +8,16 @@ import uuid
 import pickle
 import numpy as np
 import tensorflow as tf
+import os
+import imghdr
+import uuid
 from tensorflow.keras.models import load_model
 from tensorflow import keras
-from PIL import Image
+from PIL import Image as ImageProcessor
+from werkzeug.utils import secure_filename
+from app import ALLOWED_EXTENSIONS, UPLOAD_FOLDER
+from models import Image, User
+from app import db
 
 views = Blueprint("views", __name__)
 
@@ -19,31 +26,66 @@ views = Blueprint("views", __name__)
 @views.route("/", methods=["GET", "POST"])
 @login_required
 def home():
-    if request.method == "GET":
-        return render_template(
-            "home.html", pic="static/sunflower.jpg", user=current_user
-        )
-    else:
-        uploaded_file = request.files["flowerfile"]
-        if uploaded_file.filename != "":
-            image = Image.open(uploaded_file)
-            guess, score = make_flower_guess(image)
-            processed_image = process_uploaded_image(uploaded_file)
-            return render_template(
-                "home.html",
-                pic=processed_image,
-                guess=guess,
-                score=score,
-                user=current_user,
+    if request.method == "POST":
+        image = request.files["flowerfile"]
+        name = request.form["imagename"]
+        # check if filepath already exists. append random string if it does
+        if secure_filename(image.filename) in [
+            img.file_path for img in Image.query.all()
+        ]:
+            unique_str = str(uuid.uuid4())[:8]
+            image.filename = f"{unique_str}_{image.filename}"
+
+        filename = secure_filename(image.filename)
+        if filename and allowed_file(image.filename):
+            opened_image = ImageProcessor.open(image)
+            image.save(os.path.join(UPLOAD_FOLDER, filename))
+            guess, score = make_flower_guess(opened_image)
+            img = Image(name=name, file_path=filename, guess=guess, score=score)
+            db.session.add(img)
+            db.session.commit()
+
+            return redirect(
+                url_for(
+                    "views.flower_result",
+                    image=img.id,
+                )
             )
         else:
             flash("Image not uploaded", category="error")
-    return render_template("home.html", pic="static/sunflower.jpg", user=current_user)
+    return render_template("home.html", pic="static/Dahlias.jpg", user=current_user)
+
+
+@views.route("/result")
+@login_required
+def flower_result():
+    image_id = request.args.get("image")
+    image = Image.query.filter_by(id=image_id).first()
+    print(Image.query.all())
+    print(User.query.all())
+    return render_template(
+        "home.html",
+        guess=image.guess,
+        score=image.score,
+        user=current_user,
+    )
+
+
+def validate_image(stream):
+    header = stream.read(512)
+    stream.seek(0)
+    format = imghdr.what(None, header)
+    if not format:
+        return None
+    return "." + (format if format != "jpeg" else "jpg")
+
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def make_flower_guess(image):
     model = load_model("dahlias_model.h5")
-    model.summary()
     image = image.resize((180, 180))
     input_arr = keras.utils.img_to_array(image)
     input_arr = np.array([input_arr])  # Convert single image to a batch.

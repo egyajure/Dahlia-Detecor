@@ -6,8 +6,9 @@
         <img src="{{ pic }}" height=600 />
         <form action="/" method="post" enctype="multipart/form-data">
             <label for="myfile">Select a file:</label>
-            <input type="file" name="flowerfile">
-            <input type="submit" value="Upload">
+            <input type="file" id="file" name="flowerfile">
+            <input type="text" id="name" name="imagename">
+            <input type="submit" value="Upload" id="upload">
         </form>
         {% if guess and score %}
             <h1>This image most likely belongs to {{ guess }} with a {{ score }} percent confidence.</h1>
@@ -16,5 +17,17 @@
 {% endblock content %}
 
 <script>
-
+    var button = document.getElementById('upload');
+    button.addEventListener('click', function()) {
+        console.log("test")
+        /* e = document.getElementById('file')
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result.replace('data:', '').replace(/^.+,/, '');
+            localStorage.setItem('wallpaper', base64String);
+            document.body.style.background = `url(data:image/png;base64,${base64String})`;
+        };
+        reader.readAsDataURL(file); */
+    }
 </script>

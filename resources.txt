@@ -1,0 +1,5 @@
+https://www.digitalocean.com/community/tutorials/how-to-perform-flask-sqlalchemy-migrations-using-flask-migrate
+
+flask db upgrade --> adds migrations
+
+flask db downgrade --> reverts migration
