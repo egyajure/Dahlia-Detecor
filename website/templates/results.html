@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <center>
+        <h1>Dahlia Detector</h1>
+        <img src="{{ url_for('views.uploaded_file', filename=path) }}" height=600>
+        {% if guess and score %}
+            <h1>This image most likely belongs to {{ guess }} with a {{ score }} percent confidence.</h1>
+        {% endif %}
+    </center>
+{% endblock content %}

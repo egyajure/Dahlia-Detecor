@@ -1,4 +1,13 @@
-from flask import Blueprint, Flask, render_template, request, flash, redirect, url_for
+from flask import (
+    Blueprint,
+    Flask,
+    render_template,
+    request,
+    flash,
+    redirect,
+    url_for,
+    send_from_directory,
+)
 from flask_login import login_required, current_user
 import numpy as np
 import pandas as pd
@@ -29,28 +38,28 @@ def home():
     if request.method == "POST":
         image = request.files["flowerfile"]
         name = request.form["imagename"]
-        # check if filepath already exists. append random string if it does
-        if secure_filename(image.filename) in [
-            img.file_path for img in Image.query.all()
-        ]:
-            unique_str = str(uuid.uuid4())[:8]
-            image.filename = f"{unique_str}_{image.filename}"
 
         filename = secure_filename(image.filename)
-        if filename and allowed_file(image.filename):
-            opened_image = ImageProcessor.open(image)
+        if filename and allowed_file(filename):
+            # Check if the filename already exists
+            existing_image = Image.query.filter_by(file_path=filename).first()
+            if existing_image:
+                unique_str = str(uuid.uuid4())[:8]
+                filename = f"{unique_str}_{filename}"
+
+            # Save the image
             image.save(os.path.join(UPLOAD_FOLDER, filename))
+
+            # Process the image and make a guess
+            opened_image = ImageProcessor.open(image)
             guess, score = make_flower_guess(opened_image)
+
+            # Save image details to the database
             img = Image(name=name, file_path=filename, guess=guess, score=score)
             db.session.add(img)
             db.session.commit()
 
-            return redirect(
-                url_for(
-                    "views.flower_result",
-                    image=img.id,
-                )
-            )
+            return redirect(url_for("views.flower_result", image=img.id))
         else:
             flash("Image not uploaded", category="error")
     return render_template("home.html", pic="static/Dahlias.jpg", user=current_user)
@@ -61,14 +70,18 @@ def home():
 def flower_result():
     image_id = request.args.get("image")
     image = Image.query.filter_by(id=image_id).first()
-    print(Image.query.all())
-    print(User.query.all())
     return render_template(
-        "home.html",
+        "results.html",
         guess=image.guess,
         score=image.score,
         user=current_user,
+        path=image.file_path,
     )
+
+
+@views.route("/uploads/<filename>")
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
 
 
 def validate_image(stream):
