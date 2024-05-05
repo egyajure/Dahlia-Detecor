@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+        <li class="breadcrumb-item active" aria-current="page">Library</li>
+        </ol>
+    </nav>
+
+    {% if curr_img %}
+        <center>
+            <h1>Dahlia Detector</h1>
+            <img src="{{ url_for('views.uploaded_file', filename=curr_img.file_path) }}" height=600>
+            <h1>This image most likely belongs to {{ curr_img.guess }} with a {{ curr_img.score }} percent confidence.</h1>
+        </center>
+    {% endif %}
+    <div class="d-flex jalign-content-between flex-wrap">
+        {% for img in images %}
+            <div class="p-4">
+                <a href="{{ url_for('views.flower_by_type_w_score', guess=img.guess) }}">
+                    <h1>{{ img.guess }}</h1>
+                    <img src="{{ url_for('views.uploaded_file', filename=img.file_path) }}" height=300 />
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock content %}

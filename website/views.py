@@ -55,7 +55,13 @@ def home():
             guess, score = make_flower_guess(opened_image)
 
             # Save image details to the database
-            img = Image(name=name, file_path=filename, guess=guess, score=score)
+            img = Image(
+                name=name,
+                file_path=filename,
+                guess=guess,
+                score=score,
+                user_id=current_user.id,
+            )
             db.session.add(img)
             db.session.commit()
 
@@ -65,17 +71,30 @@ def home():
     return render_template("home.html", pic="static/Dahlias.jpg", user=current_user)
 
 
-@views.route("/result")
+@views.route("/library")
 @login_required
 def flower_result():
     image_id = request.args.get("image")
     image = Image.query.filter_by(id=image_id).first()
+    images = Image.query.filter_by(user_id=current_user.id).group_by(Image.guess)
+
     return render_template(
-        "results.html",
-        guess=image.guess,
-        score=image.score,
+        "library.html",
+        curr_img=image,
+        images=images,
         user=current_user,
-        path=image.file_path,
+    )
+
+
+@views.route("/library/<guess>")
+@login_required
+def flower_by_type_w_score(guess):
+    images = Image.query.filter_by(user_id=current_user.id, guess=guess)
+    return render_template(
+        "library_w_guess.html",
+        images=images,
+        guess=guess,
+        user=current_user,
     )
 
 

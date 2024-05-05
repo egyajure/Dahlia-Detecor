@@ -21,6 +21,10 @@ class Image(db.Model):
     name = db.Column(db.String(150))
     file_path = db.Column(db.String(150), unique=True)
 
+    @property
+    def rounded_score(self):
+        return round(self.score, 2)
+
     def __str__(self):
         return f"Image {self.name}"
 

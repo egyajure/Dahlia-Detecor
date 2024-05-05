@@ -21,6 +21,7 @@
             <div class="navbar-nav">
                 {% if user.is_authenticated %}
                     <a class="nav-item nav-link" id="home" href="/">Home</a>
+                    <a class="nav-item nav-link" id="library" href="/library">Library</a>
                     <a class="nav-item nav-link" id="logout" href="/logout">Logout</a>
                 {% else %}
                     <a class="nav-item nav-link" id="login" href="/login">Login</a>
@@ -47,6 +48,14 @@
         </button>
     </div>
     {% endif %} {% endfor %} {% endif %} {% endwith %}
+
+    <style>
+        .breadcrumb {
+          background-color: transparent;
+          font-size: 1.5rem;
+        }
+
+    </style>
 
     <div class="container"><div class="mt-4">{% block content %} {% endblock %}</div></div>
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
