@@ -7,10 +7,11 @@
         <li class="breadcrumb-item active" aria-current="page">{{ guess }}</li>
         </ol>
     </nav>
+    <h1>{{ guess }} images</h1>
     <div class="d-flex jalign-content-between flex-wrap">
         {% for img in images %}
             <div class="p-4">
-                <h1>{{ img.guess }}</h1>
+                <h2>{% if img.name %}{{ img.name }}{% else %}{{img.guess}}{% endif %}</h2>
                 <img src="{{ url_for('views.uploaded_file', filename=img.file_path) }}" height=300 />
                 <h3>{{ img.rounded_score }} percent confident.</h3>
             </div>
